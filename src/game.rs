@@ -302,6 +302,14 @@ impl Game {
             if !point_in_bounds(bullet.pos, &self.world.world_bounds()) {
                 continue;
             }
+            if self
+                .world
+                .spawn_zones
+                .iter()
+                .any(|zone| zone.contains(bullet.pos) && zone.team != bullet.team)
+            {
+                continue;
+            }
 
             let mut hit = false;
             for obstacle in &self.world.obstacles {
@@ -443,10 +451,14 @@ impl Game {
 
     fn find_powerup_spawn(&mut self) -> Option<Vector2> {
         let bounds = self.world.world_bounds();
+        let min_x = bounds.x + bounds.width * 0.2;
+        let max_x = bounds.x + bounds.width * 0.8;
+        let min_y = bounds.y + bounds.height * 0.2;
+        let max_y = bounds.y + bounds.height * 0.8;
         for _ in 0..60 {
             let pos = vec2(
-                self.rng.random_range(bounds.x + 60.0..bounds.x + bounds.width - 60.0),
-                self.rng.random_range(bounds.y + 60.0..bounds.y + bounds.height - 60.0),
+                self.rng.random_range(min_x..max_x),
+                self.rng.random_range(min_y..max_y),
             );
             if self.world.spawn_zones.iter().any(|zone| zone.contains(pos)) {
                 continue;
