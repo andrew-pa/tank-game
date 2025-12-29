@@ -22,7 +22,7 @@ enum ScreenState {
     RoundOver,
 }
 
-const SPRITE_ROT_OFFSET_DEG: f32 = 90.0;
+const SPRITE_ROT_OFFSET_DEG: f32 = -90.0;
 
 pub struct Game {
     state: ScreenState,
