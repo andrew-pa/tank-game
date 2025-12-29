@@ -1018,9 +1018,10 @@ fn draw_barrel(
     let w = texture.width as f32;
     let h = texture.height as f32;
     let origin = Vector2 { x: w / 2.0, y: h };
+    let mount_offset = 6.0;
     let dest = Rectangle {
         x: pos.x - origin.x,
-        y: pos.y - origin.y,
+        y: pos.y - origin.y + mount_offset,
         width: w,
         height: h,
     };
