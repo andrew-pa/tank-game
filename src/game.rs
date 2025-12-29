@@ -392,7 +392,7 @@ impl Game {
                 self.rng.random_range(min_x..max_x),
                 self.rng.random_range(min_y..max_y),
             );
-            if self.world.spawn_zones.iter().any(|zone| zone.contains(pos)) {
+            if self.world.is_inside_spawn_zone(pos) {
                 continue;
             }
             if self

@@ -176,6 +176,10 @@ impl World {
         vec2(x, y)
     }
 
+    pub fn is_inside_spawn_zone(&self, pos: Vector2) -> bool {
+        self.spawn_zones.iter().any(|zone| zone.contains(pos))
+    }
+
     pub fn is_inside_enemy_zone(&self, team: Team, pos: Vector2) -> bool {
         self.spawn_zones
             .iter()
@@ -236,7 +240,7 @@ impl World {
             let x = rng.random_range(bounds.x + radius..bounds.x + bounds.width - radius);
             let y = rng.random_range(bounds.y + radius..bounds.y + bounds.height - radius);
             let pos = vec2(x, y);
-            if self.is_inside_enemy_zone(Team::Red, pos) || self.is_inside_enemy_zone(Team::Blue, pos) {
+            if self.is_inside_spawn_zone(pos) {
                 continue;
             }
             if self
