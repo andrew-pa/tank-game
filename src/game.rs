@@ -22,6 +22,8 @@ enum ScreenState {
     RoundOver,
 }
 
+const SPRITE_ROT_OFFSET_DEG: f32 = 90.0;
+
 pub struct Game {
     state: ScreenState,
     world: World,
@@ -518,7 +520,13 @@ impl Game {
                 } else {
                     &assets.tracks_small
                 };
-                draw_texture_centered(&mut d2, texture, track.pos, rad_to_deg(track.rotation), tint);
+                draw_texture_centered(
+                    &mut d2,
+                    texture,
+                    track.pos,
+                    sprite_rotation(track.rotation),
+                    tint,
+                );
             }
 
             for obstacle in &self.world.obstacles {
@@ -540,7 +548,7 @@ impl Game {
                     &mut d2,
                     tread_texture,
                     tank.pos,
-                    rad_to_deg(tank.body_angle),
+                    sprite_rotation(tank.body_angle),
                     with_alpha(Color::new(160, 160, 160, 255), 0.35),
                 );
 
@@ -548,14 +556,14 @@ impl Game {
                     &mut d2,
                     &palette.outline_body,
                     vec2(tank.pos.x + 2.0, tank.pos.y + 2.0),
-                    rad_to_deg(tank.body_angle),
+                    sprite_rotation(tank.body_angle),
                     Color::new(0, 0, 0, 90),
                 );
                 draw_texture_centered(
                     &mut d2,
                     &palette.body,
                     tank.pos,
-                    rad_to_deg(tank.body_angle),
+                    sprite_rotation(tank.body_angle),
                     Color::WHITE,
                 );
                 draw_barrel(
@@ -576,7 +584,7 @@ impl Game {
 
             for bullet in &self.bullets {
                 let palette = bullet_palette(assets, bullet.team);
-                let rotation = rad_to_deg(vec2_angle(bullet.vel));
+                let rotation = sprite_rotation(vec2_angle(bullet.vel));
                 draw_texture_centered(&mut d2, &palette.normal, bullet.pos, rotation, Color::WHITE);
             }
 
@@ -641,6 +649,12 @@ impl Game {
         if self.countdown_timer > 0.0 {
             self.draw_countdown(d);
         }
+
+        if let Some(player) = self.tanks.get(self.player_index) {
+            if !player.alive {
+                self.draw_respawn_notice(d, player.respawn_timer);
+            }
+        }
     }
 
     fn draw_round_over(&self, d: &mut RaylibDrawHandle) {
@@ -667,6 +681,21 @@ impl Game {
             WINDOW_HEIGHT / 2 + 20,
             prompt_size,
             Color::new(220, 200, 120, 255),
+        );
+    }
+
+    fn draw_respawn_notice(&self, d: &mut RaylibDrawHandle, timer: f32) {
+        let remaining = timer.ceil().max(1.0) as i32;
+        d.draw_rectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, Color::new(8, 8, 12, 150));
+        let text = format!("Eliminated! Respawning in {remaining}");
+        let size = 38;
+        let width = d.measure_text(&text, size);
+        d.draw_text(
+            &text,
+            (WINDOW_WIDTH - width) / 2,
+            WINDOW_HEIGHT / 2 - 20,
+            size,
+            Color::new(240, 210, 120, 240),
         );
     }
 
@@ -934,10 +963,10 @@ fn draw_tank_preview(d: &mut RaylibDrawHandle, palette: &TankPalette, pos: Vecto
         d,
         &palette.outline_body,
         vec2(pos.x + 2.0, pos.y + 2.0),
-        0.0,
+        sprite_rotation(0.0),
         Color::new(0, 0, 0, 90),
     );
-    draw_texture_centered(d, &palette.body, pos, 0.0, Color::WHITE);
+    draw_texture_centered(d, &palette.body, pos, sprite_rotation(0.0), Color::WHITE);
     draw_barrel(
         d,
         &palette.outline_barrel,
@@ -1006,11 +1035,15 @@ fn draw_barrel(
         src,
         dest,
         origin,
-        rad_to_deg(angle),
+        sprite_rotation(angle),
         tint,
     );
 }
 
 fn is_start_pressed(rl: &RaylibHandle) -> bool {
     rl.is_key_pressed(KeyboardKey::KEY_ENTER) || rl.is_key_pressed(KeyboardKey::KEY_SPACE)
+}
+
+fn sprite_rotation(angle: f32) -> f32 {
+    rad_to_deg(angle) + SPRITE_ROT_OFFSET_DEG
 }
