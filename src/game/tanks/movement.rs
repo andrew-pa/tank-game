@@ -24,6 +24,18 @@ pub(super) fn try_move_tank(
     }
 }
 
+pub(super) fn advance_tank(
+    tank: &mut Tank,
+    dt: f32,
+    speed_factor: f32,
+    world: &World,
+    new_tracks: &mut Vec<TrackMark>,
+) {
+    let velocity = vec2_scale(vec2_from_angle(tank.body_angle), tank.speed * speed_factor);
+    let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
+    try_move_tank(tank, world, new_pos, new_tracks);
+}
+
 pub(super) fn wrap_angle(angle: f32) -> f32 {
     angle.rem_euclid(std::f32::consts::PI * 2.0)
 }

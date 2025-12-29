@@ -4,7 +4,7 @@ use raylib::prelude::Vector2;
 use crate::config::{BODY_ROT_SPEED, TURRET_ROT_SPEED};
 use crate::entities::{Bullet, Tank, Team, TrackMark};
 use crate::math::{
-    angle_difference, vec2, vec2_add, vec2_angle, vec2_distance, vec2_from_angle, vec2_length,
+    angle_difference, vec2, vec2_add, vec2_angle, vec2_distance, vec2_length,
     vec2_normalize, vec2_scale, vec2_sub, rotate_towards,
 };
 use crate::world::World;
@@ -12,7 +12,7 @@ use crate::world::World;
 use super::combat::fire_bullet;
 use super::super::constants::{AI_FIRE_RANGE, AI_TARGET_FAR, AI_TARGET_NEAR};
 use super::modifiers::{range_multiplier, speed_multiplier};
-use super::movement::try_move_tank;
+use super::movement::advance_tank;
 use super::spawn::pick_waypoint;
 
 pub(super) fn update_ai_tank(
@@ -62,12 +62,7 @@ pub(super) fn update_ai_tank(
     if vec2_length(steer) > 0.1 {
         let target_angle = vec2_angle(steer);
         tank.body_angle = rotate_towards(tank.body_angle, target_angle, BODY_ROT_SPEED * dt);
-        let velocity = vec2_scale(
-            vec2_from_angle(tank.body_angle),
-            tank.speed * speed_multiplier(tank),
-        );
-        let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
-        try_move_tank(tank, world, new_pos, new_tracks);
+        advance_tank(tank, dt, speed_multiplier(tank), world, new_tracks);
     }
 }
 

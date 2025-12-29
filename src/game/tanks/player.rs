@@ -2,12 +2,12 @@ use raylib::prelude::{KeyboardKey, MouseButton, RaylibHandle, Vector2};
 
 use crate::config::BODY_ROT_SPEED;
 use crate::entities::{Bullet, Tank, TrackMark};
-use crate::math::{vec2_add, vec2_angle, vec2_from_angle, vec2_length, vec2_scale, vec2_sub};
+use crate::math::{vec2_angle, vec2_length, vec2_sub};
 use crate::world::World;
 
 use super::combat::fire_bullet;
 use super::modifiers::speed_multiplier;
-use super::movement::{try_move_tank, wrap_angle};
+use super::movement::{advance_tank, wrap_angle};
 
 pub(super) fn update_player_tank(
     tank: &mut Tank,
@@ -38,12 +38,7 @@ pub(super) fn update_player_tank(
     }
 
     if movement.abs() > 0.01 {
-        let velocity = vec2_scale(
-            vec2_from_angle(tank.body_angle),
-            tank.speed * movement * speed_multiplier(tank),
-        );
-        let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
-        try_move_tank(tank, world, new_pos, new_tracks);
+        advance_tank(tank, dt, movement * speed_multiplier(tank), world, new_tracks);
     }
 
     let turret_target = vec2_sub(mouse_world, tank.pos);
