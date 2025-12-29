@@ -22,7 +22,7 @@ enum ScreenState {
     RoundOver,
 }
 
-const SPRITE_ROT_OFFSET_DEG: f32 = -90.0;
+const SPRITE_ROT_OFFSET_DEG: f32 = 90.0;
 
 pub struct Game {
     state: ScreenState,
@@ -1017,7 +1017,7 @@ fn draw_barrel(
 ) {
     let w = texture.width as f32;
     let h = texture.height as f32;
-    let origin = Vector2 { x: w / 2.0, y: h * 0.75 };
+    let origin = Vector2 { x: w / 2.0, y: h };
     let dest = Rectangle {
         x: pos.x - origin.x,
         y: pos.y - origin.y,
