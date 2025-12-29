@@ -138,7 +138,7 @@ pub(super) fn draw_powerup_markers(d: &mut RaylibDrawHandle, tank: &Tank) {
             tank.pos.x as i32,
             tank.pos.y as i32,
             TANK_RADIUS + 8.0 + pulse * 4.0,
-            Color::new(120, 210, 255, 220),
+            invincible_color(220),
         );
     }
     if tank.rapid_timer > 0.0 {
@@ -148,7 +148,7 @@ pub(super) fn draw_powerup_markers(d: &mut RaylibDrawHandle, tank: &Tank) {
             tank.pos.x as i32,
             tank.pos.y as i32,
             TANK_RADIUS + 4.0 + ring * 6.0 + pulse * 3.0,
-            Color::new(255, 200, 90, 220),
+            rapid_color(220),
         );
     }
 }
@@ -161,20 +161,32 @@ pub(super) fn draw_powerup(d: &mut RaylibDrawHandle, assets: &Assets, powerup: &
     };
     let idx = ((powerup.age * 8.0) as usize) % frames.len();
     let pulse = (powerup.age * 6.0).sin().abs();
-    let tint = match powerup.kind {
-        PowerupKind::Invincible => Color::new(120, 210, 255, 235),
-        PowerupKind::RapidRange => Color::new(255, 200, 90, 235),
-        PowerupKind::Heal => Color::new(120, 230, 160, 235),
-    };
+    let tint = powerup_color(powerup.kind, 235);
     draw_texture_centered(d, &frames[idx], powerup.pos, 0.0, tint);
     d.draw_circle_lines(
         powerup.pos.x as i32,
         powerup.pos.y as i32,
         26.0 + pulse * 6.0,
-        match powerup.kind {
-            PowerupKind::Invincible => Color::new(120, 210, 255, 220),
-            PowerupKind::RapidRange => Color::new(255, 200, 90, 220),
-            PowerupKind::Heal => Color::new(120, 230, 160, 220),
-        },
+        powerup_color(powerup.kind, 220),
     );
+}
+
+fn powerup_color(kind: PowerupKind, alpha: u8) -> Color {
+    match kind {
+        PowerupKind::Invincible => invincible_color(alpha),
+        PowerupKind::RapidRange => rapid_color(alpha),
+        PowerupKind::Heal => heal_color(alpha),
+    }
+}
+
+fn invincible_color(alpha: u8) -> Color {
+    Color::new(120, 210, 255, alpha)
+}
+
+fn rapid_color(alpha: u8) -> Color {
+    Color::new(255, 200, 90, alpha)
+}
+
+fn heal_color(alpha: u8) -> Color {
+    Color::new(120, 230, 160, alpha)
 }

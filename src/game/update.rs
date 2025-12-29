@@ -73,16 +73,13 @@ impl Game {
             let mut hit = false;
             for obstacle in &self.world.obstacles {
                 if vec2_distance(bullet.pos, obstacle.pos) < obstacle.radius + BULLET_RADIUS {
-                    self.explosions.push(Explosion {
-                        pos: bullet.pos,
-                        color: SmokeColor::Grey,
-                        age: 0.0,
-                    });
-                    self.explosions.push(Explosion {
-                        pos: vec2_add(bullet.pos, vec2(12.0, -8.0)),
-                        color: SmokeColor::White,
-                        age: 0.0,
-                    });
+                    spawn_explosion_pair(
+                        &mut self.explosions,
+                        bullet.pos,
+                        SmokeColor::Grey,
+                        SmokeColor::White,
+                        vec2(12.0, -8.0),
+                    );
                     hit = true;
                     break;
                 }
@@ -101,23 +98,16 @@ impl Game {
                                 tank.alive = false;
                                 tank.respawn_timer = RESPAWN_TIME;
                                 self.team_kills[bullet.team.index()] += 1;
-                                self.explosions.push(Explosion {
-                                    pos: tank.pos,
-                                    color: SmokeColor::Orange,
-                                    age: 0.0,
-                                });
-                                self.explosions.push(Explosion {
-                                    pos: vec2_add(tank.pos, vec2(-12.0, 10.0)),
-                                    color: SmokeColor::Yellow,
-                                    age: 0.0,
-                                });
+                                spawn_explosion_pair(
+                                    &mut self.explosions,
+                                    tank.pos,
+                                    SmokeColor::Orange,
+                                    SmokeColor::Yellow,
+                                    vec2(-12.0, 10.0),
+                                );
                             }
                         } else {
-                            self.explosions.push(Explosion {
-                                pos: bullet.pos,
-                                color: SmokeColor::White,
-                                age: 0.0,
-                            });
+                            spawn_explosion(&mut self.explosions, bullet.pos, SmokeColor::White);
                         }
                         hit = true;
                         break;
@@ -151,4 +141,19 @@ impl Game {
 fn is_start_pressed(rl: &RaylibHandle) -> bool {
     rl.is_key_pressed(raylib::prelude::KeyboardKey::KEY_ENTER)
         || rl.is_key_pressed(raylib::prelude::KeyboardKey::KEY_SPACE)
+}
+
+fn spawn_explosion(explosions: &mut Vec<Explosion>, pos: raylib::prelude::Vector2, color: SmokeColor) {
+    explosions.push(Explosion { pos, color, age: 0.0 });
+}
+
+fn spawn_explosion_pair(
+    explosions: &mut Vec<Explosion>,
+    pos: raylib::prelude::Vector2,
+    primary: SmokeColor,
+    secondary: SmokeColor,
+    offset: raylib::prelude::Vector2,
+) {
+    spawn_explosion(explosions, pos, primary);
+    spawn_explosion(explosions, vec2_add(pos, offset), secondary);
 }

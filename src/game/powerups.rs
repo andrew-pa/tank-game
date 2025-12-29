@@ -5,7 +5,7 @@ use crate::config::{
     HEALTH_FLASH_TIME, POWERUP_BASE_SPAWN, POWERUP_DURATION, POWERUP_MAX_COUNT, POWERUP_MAX_SPAWN,
     POWERUP_MIN_SPAWN, ROUND_TIME, TANK_RADIUS,
 };
-use crate::entities::{Powerup, PowerupKind};
+use crate::entities::{Powerup, PowerupKind, Tank};
 use crate::math::{vec2, vec2_distance};
 
 use super::Game;
@@ -42,18 +42,7 @@ impl Game {
         'outer: for powerup in self.powerups.drain(..) {
             for tank in &mut self.tanks {
                 if tank.alive && vec2_distance(powerup.pos, tank.pos) < TANK_RADIUS + 22.0 {
-                    match powerup.kind {
-                        PowerupKind::Invincible => {
-                            tank.invincible_timer = POWERUP_DURATION;
-                        }
-                        PowerupKind::RapidRange => {
-                            tank.rapid_timer = POWERUP_DURATION;
-                        }
-                        PowerupKind::Heal => {
-                            tank.health = tank.max_health;
-                            tank.health_flash = HEALTH_FLASH_TIME;
-                        }
-                    }
+                    apply_powerup(tank, powerup.kind);
                     continue 'outer;
                 }
             }
@@ -102,5 +91,20 @@ impl Game {
             return Some(pos);
         }
         None
+    }
+}
+
+fn apply_powerup(tank: &mut Tank, kind: PowerupKind) {
+    match kind {
+        PowerupKind::Invincible => {
+            tank.invincible_timer = POWERUP_DURATION;
+        }
+        PowerupKind::RapidRange => {
+            tank.rapid_timer = POWERUP_DURATION;
+        }
+        PowerupKind::Heal => {
+            tank.health = tank.max_health;
+            tank.health_flash = HEALTH_FLASH_TIME;
+        }
     }
 }
