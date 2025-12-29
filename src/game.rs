@@ -987,8 +987,8 @@ fn draw_texture_centered(
     let w = texture.width as f32;
     let h = texture.height as f32;
     let dest = Rectangle {
-        x: pos.x - w / 2.0,
-        y: pos.y - h / 2.0,
+        x: pos.x,
+        y: pos.y,
         width: w,
         height: h,
     };
@@ -1018,10 +1018,9 @@ fn draw_barrel(
     let w = texture.width as f32;
     let h = texture.height as f32;
     let origin = Vector2 { x: w / 2.0, y: h };
-    let mount_offset = 6.0;
     let dest = Rectangle {
-        x: pos.x - origin.x,
-        y: pos.y - origin.y + mount_offset,
+        x: pos.x,
+        y: pos.y,
         width: w,
         height: h,
     };
