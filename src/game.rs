@@ -3,9 +3,9 @@ use raylib::prelude::*;
 
 use crate::assets::{bullet_palette, obstacle_texture, tank_palette, Assets, TankPalette};
 use crate::config::{
-    BODY_ROT_SPEED, BULLET_RADIUS, BULLET_SPEED, FIRE_COOLDOWN, RESPAWN_TIME, ROUND_TIME,
-    TANKS_PER_TEAM, TANK_RADIUS, TANK_SPEED, TILE_SIZE, TRACK_LIFE, TURRET_ROT_SPEED,
-    WINDOW_HEIGHT, WINDOW_WIDTH,
+    BODY_ROT_SPEED, BULLET_RADIUS, BULLET_SPEED, FIRE_COOLDOWN, PLAYER_INTRO_TIME, RESPAWN_TIME,
+    ROUND_COUNTDOWN, ROUND_TIME, TANKS_PER_TEAM, TANK_RADIUS, TANK_SPEED, TILE_SIZE, TRACK_LIFE,
+    TURRET_ROT_SPEED, WINDOW_HEIGHT, WINDOW_WIDTH,
 };
 use crate::entities::{Bullet, Explosion, SmokeColor, Tank, Team, TrackMark};
 use crate::math::{
@@ -31,8 +31,11 @@ pub struct Game {
     explosions: Vec<Explosion>,
     rng: SmallRng,
     round_timer: f32,
+    countdown_timer: f32,
+    intro_timer: f32,
     team_kills: [u32; 2],
     last_winner: Option<Team>,
+    player_index: usize,
 }
 
 impl Game {
@@ -49,8 +52,11 @@ impl Game {
             explosions: Vec::new(),
             rng,
             round_timer: ROUND_TIME,
+            countdown_timer: ROUND_COUNTDOWN,
+            intro_timer: PLAYER_INTRO_TIME,
             team_kills: [0, 0],
             last_winner: None,
+            player_index: 0,
         };
         game.reset_round();
         game.state = ScreenState::Title;
@@ -64,8 +70,15 @@ impl Game {
         self.tracks.clear();
         self.explosions.clear();
         self.round_timer = ROUND_TIME;
+        self.countdown_timer = ROUND_COUNTDOWN;
+        self.intro_timer = PLAYER_INTRO_TIME;
         self.team_kills = [0, 0];
         self.last_winner = None;
+        self.player_index = self
+            .tanks
+            .iter()
+            .position(|tank| tank.team == Team::Red)
+            .unwrap_or(0);
     }
 
     pub fn update(&mut self, dt: f32, rl: &RaylibHandle) {
@@ -77,6 +90,12 @@ impl Game {
                 }
             }
             ScreenState::Playing => {
+                self.intro_timer = (self.intro_timer - dt).max(0.0);
+                if self.countdown_timer > 0.0 {
+                    self.countdown_timer = (self.countdown_timer - dt).max(0.0);
+                    return;
+                }
+
                 self.round_timer -= dt;
                 if self.round_timer <= 0.0 {
                     self.round_timer = 0.0;
@@ -87,7 +106,7 @@ impl Game {
                         std::cmp::Ordering::Equal => None,
                     };
                 }
-                self.update_tanks(dt);
+                self.update_tanks(dt, rl);
                 self.update_bullets(dt);
                 self.update_tracks(dt);
                 self.update_explosions(dt);
@@ -101,7 +120,7 @@ impl Game {
         }
     }
 
-    fn update_tanks(&mut self, dt: f32) {
+    fn update_tanks(&mut self, dt: f32, rl: &RaylibHandle) {
         let snapshot: Vec<(Team, Vector2, bool)> = self
             .tanks
             .iter()
@@ -110,8 +129,10 @@ impl Game {
         let mut new_bullets = Vec::new();
         let mut new_tracks = Vec::new();
         let world = &self.world;
+        let camera = self.camera();
+        let mouse_world = rl.get_screen_to_world2D(rl.get_mouse_position(), camera);
 
-        for tank in &mut self.tanks {
+        for (index, tank) in self.tanks.iter_mut().enumerate() {
             if !tank.alive {
                 tank.respawn_timer -= dt;
                 if tank.respawn_timer <= 0.0 {
@@ -125,7 +146,19 @@ impl Game {
             }
 
             tank.fire_cooldown = (tank.fire_cooldown - dt).max(0.0);
-            tank.tread_phase += dt * tank.speed * 0.02;
+
+            if index == self.player_index {
+                update_player_tank(
+                    tank,
+                    dt,
+                    rl,
+                    world,
+                    mouse_world,
+                    &mut new_tracks,
+                    &mut new_bullets,
+                );
+                continue;
+            }
 
             let (target_pos, target_dist) = find_target_snapshot(&snapshot, tank.team, tank.pos);
             let desired_dir = if let Some(target) = target_pos {
@@ -181,6 +214,7 @@ impl Game {
                 if position_clear(world, tank.team, new_pos, TANK_RADIUS) {
                     let distance = vec2_distance(tank.pos, new_pos);
                     tank.track_distance += distance;
+                    tank.tread_phase += distance * 0.05;
                     tank.pos = new_pos;
                     if tank.track_distance > 40.0 {
                         tank.track_distance = 0.0;
@@ -550,6 +584,33 @@ impl Game {
                 let frame = explosion_frame(assets, explosion);
                 draw_texture_centered(&mut d2, frame, explosion.pos, 0.0, Color::WHITE);
             }
+
+            if self.intro_timer > 0.0 {
+                if let Some(player) = self
+                    .tanks
+                    .get(self.player_index)
+                    .filter(|tank| tank.alive)
+                {
+                    let pulse = (self.intro_timer * 6.0).sin().abs();
+                    let radius = TANK_RADIUS + 10.0 + pulse * 6.0;
+                    d2.draw_circle_lines(
+                        player.pos.x as i32,
+                        player.pos.y as i32,
+                        radius,
+                        Color::new(255, 230, 120, 220),
+                    );
+                    let label = "YOU";
+                    let size = 18;
+                    let width = d2.measure_text(label, size);
+                    d2.draw_text(
+                        label,
+                        (player.pos.x - width as f32 * 0.5) as i32,
+                        (player.pos.y - radius - 24.0) as i32,
+                        size,
+                        Color::new(255, 230, 120, 235),
+                    );
+                }
+            }
         });
     }
 
@@ -576,6 +637,10 @@ impl Game {
             20,
             Color::new(240, 240, 240, 255),
         );
+
+        if self.countdown_timer > 0.0 {
+            self.draw_countdown(d);
+        }
     }
 
     fn draw_round_over(&self, d: &mut RaylibDrawHandle) {
@@ -605,26 +670,63 @@ impl Game {
         );
     }
 
+    fn draw_countdown(&self, d: &mut RaylibDrawHandle) {
+        let count = self.countdown_timer.ceil().max(1.0) as i32;
+        let text = format!("Deploying in {count}");
+        let size = 44;
+        let width = d.measure_text(&text, size);
+        d.draw_text(
+            &text,
+            (WINDOW_WIDTH - width) / 2,
+            WINDOW_HEIGHT / 2 - 80,
+            size,
+            Color::new(255, 230, 120, 240),
+        );
+        let hint = "WASD to move • Mouse to aim • LMB to fire";
+        let hint_size = 18;
+        let hint_width = d.measure_text(hint, hint_size);
+        d.draw_text(
+            hint,
+            (WINDOW_WIDTH - hint_width) / 2,
+            WINDOW_HEIGHT / 2 - 32,
+            hint_size,
+            Color::new(230, 230, 230, 220),
+        );
+    }
+
     fn camera(&self) -> Camera2D {
-        let mut center = vec2(0.0, 0.0);
-        let mut count = 0.0;
-        for tank in &self.tanks {
-            if tank.alive {
-                center = vec2_add(center, tank.pos);
-                count += 1.0;
+        let mut center = self
+            .tanks
+            .get(self.player_index)
+            .filter(|tank| tank.alive)
+            .map(|tank| tank.pos);
+
+        if center.is_none() {
+            let mut sum = vec2(0.0, 0.0);
+            let mut count = 0.0;
+            for tank in &self.tanks {
+                if tank.alive {
+                    sum = vec2_add(sum, tank.pos);
+                    count += 1.0;
+                }
             }
-        }
-        if count > 0.0 {
-            center = vec2_scale(center, 1.0 / count);
-        } else {
-            center = vec2(
-                self.world.width as f32 * TILE_SIZE * 0.5,
-                self.world.height as f32 * TILE_SIZE * 0.5,
-            );
+            if count > 0.0 {
+                center = Some(vec2_scale(sum, 1.0 / count));
+            } else {
+                center = Some(vec2(
+                    self.world.width as f32 * TILE_SIZE * 0.5,
+                    self.world.height as f32 * TILE_SIZE * 0.5,
+                ));
+            }
         }
 
         Camera2D {
-            target: center,
+            target: center.unwrap_or_else(|| {
+                vec2(
+                    self.world.width as f32 * TILE_SIZE * 0.5,
+                    self.world.height as f32 * TILE_SIZE * 0.5,
+                )
+            }),
             offset: vec2(WINDOW_WIDTH as f32 * 0.5, WINDOW_HEIGHT as f32 * 0.55),
             rotation: 0.0,
             zoom: 0.55,
@@ -735,6 +837,85 @@ fn position_clear(world: &World, team: Team, pos: Vector2, radius: f32) -> bool 
         }
     }
     true
+}
+
+fn update_player_tank(
+    tank: &mut Tank,
+    dt: f32,
+    rl: &RaylibHandle,
+    world: &World,
+    mouse_world: Vector2,
+    new_tracks: &mut Vec<TrackMark>,
+    new_bullets: &mut Vec<Bullet>,
+) {
+    let mut turn: f32 = 0.0;
+    if rl.is_key_down(KeyboardKey::KEY_A) || rl.is_key_down(KeyboardKey::KEY_LEFT) {
+        turn -= 1.0;
+    }
+    if rl.is_key_down(KeyboardKey::KEY_D) || rl.is_key_down(KeyboardKey::KEY_RIGHT) {
+        turn += 1.0;
+    }
+    if turn.abs() > 0.0 {
+        tank.body_angle = wrap_angle(tank.body_angle + turn * BODY_ROT_SPEED * dt);
+    }
+
+    let mut movement: f32 = 0.0;
+    if rl.is_key_down(KeyboardKey::KEY_W) || rl.is_key_down(KeyboardKey::KEY_UP) {
+        movement += 1.0;
+    }
+    if rl.is_key_down(KeyboardKey::KEY_S) || rl.is_key_down(KeyboardKey::KEY_DOWN) {
+        movement -= 1.0;
+    }
+
+    if movement.abs() > 0.01 {
+        let velocity = vec2_scale(vec2_from_angle(tank.body_angle), tank.speed * movement);
+        let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
+        if position_clear(world, tank.team, new_pos, TANK_RADIUS) {
+            let distance = vec2_distance(tank.pos, new_pos);
+            tank.track_distance += distance;
+            tank.tread_phase += distance * 0.05;
+            tank.pos = new_pos;
+            if tank.track_distance > 40.0 {
+                tank.track_distance = 0.0;
+                new_tracks.push(TrackMark {
+                    pos: vec2_add(
+                        tank.pos,
+                        vec2_scale(
+                            vec2_from_angle(tank.body_angle + std::f32::consts::PI),
+                            18.0,
+                        ),
+                    ),
+                    rotation: tank.body_angle,
+                    age: 0.0,
+                });
+            }
+        }
+    }
+
+    let turret_target = vec2_sub(mouse_world, tank.pos);
+    if vec2_length(turret_target) > 0.01 {
+        tank.turret_angle = vec2_angle(turret_target);
+    }
+
+    let wants_fire = rl.is_mouse_button_down(MouseButton::MOUSE_BUTTON_LEFT)
+        || rl.is_key_down(KeyboardKey::KEY_SPACE);
+    if wants_fire && tank.fire_cooldown <= 0.0 {
+        let barrel_len = 46.0;
+        let dir = vec2_from_angle(tank.turret_angle);
+        let pos = vec2_add(tank.pos, vec2_scale(dir, barrel_len));
+        let vel = vec2_scale(dir, BULLET_SPEED);
+        new_bullets.push(Bullet {
+            pos,
+            vel,
+            team: tank.team,
+            life: 2.2,
+        });
+        tank.fire_cooldown = FIRE_COOLDOWN;
+    }
+}
+
+fn wrap_angle(angle: f32) -> f32 {
+    angle.rem_euclid(std::f32::consts::PI * 2.0)
 }
 
 fn explosion_frame<'a>(assets: &'a Assets, explosion: &Explosion) -> &'a Texture2D {
