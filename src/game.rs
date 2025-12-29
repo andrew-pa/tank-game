@@ -3,11 +3,13 @@ use raylib::prelude::*;
 
 use crate::assets::{bullet_palette, obstacle_texture, tank_palette, Assets, TankPalette};
 use crate::config::{
-    BODY_ROT_SPEED, BULLET_RADIUS, BULLET_SPEED, FIRE_COOLDOWN, PLAYER_INTRO_TIME, RESPAWN_TIME,
-    ROUND_COUNTDOWN, ROUND_TIME, TANKS_PER_TEAM, TANK_RADIUS, TANK_SPEED, TILE_SIZE, TRACK_LIFE,
-    TURRET_ROT_SPEED, WINDOW_HEIGHT, WINDOW_WIDTH,
+    BODY_ROT_SPEED, BULLET_DAMAGE, BULLET_LIFE, BULLET_RADIUS, BULLET_SPEED, FIRE_COOLDOWN,
+    HEALTH_FLASH_TIME, MAX_HEALTH, PLAYER_INTRO_TIME, POWERUP_BASE_SPAWN, POWERUP_DURATION,
+    POWERUP_MAX_COUNT, POWERUP_MAX_SPAWN, POWERUP_MIN_SPAWN, RESPAWN_TIME, ROUND_COUNTDOWN,
+    ROUND_TIME, TANKS_PER_TEAM, TANK_RADIUS, TANK_SPEED, TILE_SIZE, TRACK_LIFE, TURRET_ROT_SPEED,
+    WINDOW_HEIGHT, WINDOW_WIDTH,
 };
-use crate::entities::{Bullet, Explosion, SmokeColor, Tank, Team, TrackMark};
+use crate::entities::{Bullet, Explosion, Powerup, PowerupKind, SmokeColor, Tank, Team, TrackMark};
 use crate::math::{
     angle_difference, point_in_bounds, push_outside_rect, rad_to_deg, random_angle, rotate_towards,
     vec2, vec2_add, vec2_angle, vec2_distance, vec2_from_angle, vec2_length, vec2_normalize,
@@ -31,10 +33,12 @@ pub struct Game {
     bullets: Vec<Bullet>,
     tracks: Vec<TrackMark>,
     explosions: Vec<Explosion>,
+    powerups: Vec<Powerup>,
     rng: SmallRng,
     round_timer: f32,
     countdown_timer: f32,
     intro_timer: f32,
+    powerup_spawn_timer: f32,
     team_kills: [u32; 2],
     last_winner: Option<Team>,
     player_index: usize,
@@ -52,10 +56,12 @@ impl Game {
             bullets: Vec::new(),
             tracks: Vec::new(),
             explosions: Vec::new(),
+            powerups: Vec::new(),
             rng,
             round_timer: ROUND_TIME,
             countdown_timer: ROUND_COUNTDOWN,
             intro_timer: PLAYER_INTRO_TIME,
+            powerup_spawn_timer: POWERUP_BASE_SPAWN,
             team_kills: [0, 0],
             last_winner: None,
             player_index: 0,
@@ -71,9 +77,11 @@ impl Game {
         self.bullets.clear();
         self.tracks.clear();
         self.explosions.clear();
+        self.powerups.clear();
         self.round_timer = ROUND_TIME;
         self.countdown_timer = ROUND_COUNTDOWN;
         self.intro_timer = PLAYER_INTRO_TIME;
+        self.powerup_spawn_timer = POWERUP_BASE_SPAWN;
         self.team_kills = [0, 0];
         self.last_winner = None;
         self.player_index = self
@@ -93,6 +101,7 @@ impl Game {
             }
             ScreenState::Playing => {
                 self.intro_timer = (self.intro_timer - dt).max(0.0);
+                self.update_powerups(dt);
                 if self.countdown_timer > 0.0 {
                     self.countdown_timer = (self.countdown_timer - dt).max(0.0);
                     return;
@@ -135,6 +144,10 @@ impl Game {
         let mouse_world = rl.get_screen_to_world2D(rl.get_mouse_position(), camera);
 
         for (index, tank) in self.tanks.iter_mut().enumerate() {
+            tank.health_flash = (tank.health_flash - dt).max(0.0);
+            tank.invincible_timer = (tank.invincible_timer - dt).max(0.0);
+            tank.rapid_timer = (tank.rapid_timer - dt).max(0.0);
+
             if !tank.alive {
                 tank.respawn_timer -= dt;
                 if tank.respawn_timer <= 0.0 {
@@ -143,6 +156,10 @@ impl Game {
                     tank.body_angle = random_angle(&mut self.rng);
                     tank.turret_angle = tank.body_angle;
                     tank.fire_cooldown = FIRE_COOLDOWN * 0.5;
+                    tank.health = tank.max_health;
+                    tank.health_flash = 0.0;
+                    tank.invincible_timer = 0.0;
+                    tank.rapid_timer = 0.0;
                 }
                 continue;
             }
@@ -187,7 +204,7 @@ impl Game {
 
                 if angle_difference(tank.turret_angle, target_angle) < 0.22
                     && tank.fire_cooldown <= 0.0
-                    && target_dist < 900.0
+                    && target_dist < 900.0 * tank_range_multiplier(tank)
                 {
                     let barrel_len = 46.0;
                     let dir = vec2_from_angle(tank.turret_angle);
@@ -197,9 +214,9 @@ impl Game {
                         pos,
                         vel,
                         team: tank.team,
-                        life: 2.2,
+                        life: BULLET_LIFE * tank_range_multiplier(tank),
                     });
-                    tank.fire_cooldown = FIRE_COOLDOWN;
+                    tank.fire_cooldown = FIRE_COOLDOWN / tank_fire_rate_multiplier(tank);
                 }
             } else {
                 tank.turret_angle =
@@ -211,7 +228,10 @@ impl Game {
             if vec2_length(steer) > 0.1 {
                 let target_angle = vec2_angle(steer);
                 tank.body_angle = rotate_towards(tank.body_angle, target_angle, BODY_ROT_SPEED * dt);
-                let velocity = vec2_scale(vec2_from_angle(tank.body_angle), tank.speed);
+                let velocity = vec2_scale(
+                    vec2_from_angle(tank.body_angle),
+                    tank.speed * tank_speed_multiplier(tank),
+                );
                 let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
                 if position_clear(world, tank.team, new_pos, TANK_RADIUS) {
                     let distance = vec2_distance(tank.pos, new_pos);
@@ -307,19 +327,31 @@ impl Game {
             for tank in &mut self.tanks {
                 if tank.alive && tank.team != bullet.team {
                     if vec2_distance(bullet.pos, tank.pos) < TANK_RADIUS + BULLET_RADIUS {
-                        tank.alive = false;
-                        tank.respawn_timer = RESPAWN_TIME;
-                        self.team_kills[bullet.team.index()] += 1;
-                        self.explosions.push(Explosion {
-                            pos: tank.pos,
-                            color: SmokeColor::Orange,
-                            age: 0.0,
-                        });
-                        self.explosions.push(Explosion {
-                            pos: vec2_add(tank.pos, vec2(-12.0, 10.0)),
-                            color: SmokeColor::Yellow,
-                            age: 0.0,
-                        });
+                        if tank.invincible_timer <= 0.0 {
+                            tank.health = (tank.health - BULLET_DAMAGE).max(0.0);
+                            tank.health_flash = HEALTH_FLASH_TIME;
+                            if tank.health <= 0.0 {
+                                tank.alive = false;
+                                tank.respawn_timer = RESPAWN_TIME;
+                                self.team_kills[bullet.team.index()] += 1;
+                                self.explosions.push(Explosion {
+                                    pos: tank.pos,
+                                    color: SmokeColor::Orange,
+                                    age: 0.0,
+                                });
+                                self.explosions.push(Explosion {
+                                    pos: vec2_add(tank.pos, vec2(-12.0, 10.0)),
+                                    color: SmokeColor::Yellow,
+                                    age: 0.0,
+                                });
+                            }
+                        } else {
+                            self.explosions.push(Explosion {
+                                pos: bullet.pos,
+                                color: SmokeColor::White,
+                                age: 0.0,
+                            });
+                        }
                         hit = true;
                         break;
                     }
@@ -346,6 +378,97 @@ impl Game {
             explosion.age += dt;
             explosion.age < 0.48
         });
+    }
+
+    fn update_powerups(&mut self, dt: f32) {
+        for powerup in &mut self.powerups {
+            powerup.age += dt;
+        }
+
+        self.powerup_spawn_timer -= dt;
+        if self.powerup_spawn_timer <= 0.0 && self.powerups.len() < POWERUP_MAX_COUNT {
+            if let Some(pos) = self.find_powerup_spawn() {
+                let kind = match self.rng.random_range(0..3) {
+                    0 => PowerupKind::Invincible,
+                    1 => PowerupKind::RapidRange,
+                    _ => PowerupKind::Heal,
+                };
+                self.powerups.push(Powerup { kind, pos, age: 0.0 });
+            }
+            self.powerup_spawn_timer = self.next_powerup_spawn_delay();
+        } else if self.powerup_spawn_timer <= 0.0 {
+            self.powerup_spawn_timer = self.next_powerup_spawn_delay();
+        }
+
+        self.collect_powerups();
+    }
+
+    fn collect_powerups(&mut self) {
+        if self.powerups.is_empty() {
+            return;
+        }
+        let mut remaining = Vec::with_capacity(self.powerups.len());
+        'outer: for powerup in self.powerups.drain(..) {
+            for tank in &mut self.tanks {
+                if tank.alive
+                    && vec2_distance(powerup.pos, tank.pos) < TANK_RADIUS + 22.0
+                {
+                    match powerup.kind {
+                        PowerupKind::Invincible => {
+                            tank.invincible_timer = POWERUP_DURATION;
+                        }
+                        PowerupKind::RapidRange => {
+                            tank.rapid_timer = POWERUP_DURATION;
+                        }
+                        PowerupKind::Heal => {
+                            tank.health = tank.max_health;
+                            tank.health_flash = HEALTH_FLASH_TIME;
+                        }
+                    }
+                    continue 'outer;
+                }
+            }
+            remaining.push(powerup);
+        }
+        self.powerups = remaining;
+    }
+
+    fn next_powerup_spawn_delay(&mut self) -> f32 {
+        let progress = (1.0 - self.round_timer / ROUND_TIME).clamp(0.0, 1.0);
+        let edge = (progress - 0.5).abs() * 2.0;
+        let boost = 0.7 + edge * 0.8;
+        let target = (POWERUP_BASE_SPAWN / boost).clamp(POWERUP_MIN_SPAWN, POWERUP_MAX_SPAWN);
+        self.rng.random_range(target * 0.85..target * 1.15)
+    }
+
+    fn find_powerup_spawn(&mut self) -> Option<Vector2> {
+        let bounds = self.world.world_bounds();
+        for _ in 0..60 {
+            let pos = vec2(
+                self.rng.random_range(bounds.x + 60.0..bounds.x + bounds.width - 60.0),
+                self.rng.random_range(bounds.y + 60.0..bounds.y + bounds.height - 60.0),
+            );
+            if self.world.spawn_zones.iter().any(|zone| zone.contains(pos)) {
+                continue;
+            }
+            if self
+                .world
+                .obstacles
+                .iter()
+                .any(|obs| vec2_distance(obs.pos, pos) < obs.radius + 36.0)
+            {
+                continue;
+            }
+            if self
+                .tanks
+                .iter()
+                .any(|tank| vec2_distance(tank.pos, pos) < TANK_RADIUS + 50.0)
+            {
+                continue;
+            }
+            return Some(pos);
+        }
+        None
     }
 
     pub fn draw(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
@@ -534,6 +657,10 @@ impl Game {
                 draw_texture_centered(&mut d2, texture, obstacle.pos, 0.0, Color::WHITE);
             }
 
+            for powerup in &self.powerups {
+                draw_powerup(&mut d2, assets, powerup);
+            }
+
             for tank in &self.tanks {
                 if !tank.alive {
                     continue;
@@ -580,6 +707,9 @@ impl Game {
                     tank.turret_angle,
                     Color::WHITE,
                 );
+
+                draw_tank_health(&mut d2, tank);
+                draw_powerup_markers(&mut d2, tank);
             }
 
             for bullet in &self.bullets {
@@ -651,6 +781,7 @@ impl Game {
         }
 
         if let Some(player) = self.tanks.get(self.player_index) {
+            self.draw_player_health(d, player);
             if !player.alive {
                 self.draw_respawn_notice(d, player.respawn_timer);
             }
@@ -697,6 +828,27 @@ impl Game {
             size,
             Color::new(240, 210, 120, 240),
         );
+    }
+
+    fn draw_player_health(&self, d: &mut RaylibDrawHandle, player: &Tank) {
+        let bar_width = 260;
+        let bar_height = 14;
+        let x = 20;
+        let y = 58;
+        let pct = (player.health / player.max_health).clamp(0.0, 1.0);
+        d.draw_rectangle(x, y, bar_width, bar_height, Color::new(10, 10, 10, 200));
+        d.draw_rectangle(
+            x + 2,
+            y + 2,
+            ((bar_width - 4) as f32 * pct) as i32,
+            bar_height - 4,
+            if player.invincible_timer > 0.0 {
+                Color::new(120, 210, 255, 230)
+            } else {
+                player.team.color()
+            },
+        );
+        d.draw_text("Hull", x, y - 18, 16, Color::new(230, 230, 230, 220));
     }
 
     fn draw_countdown(&self, d: &mut RaylibDrawHandle) {
@@ -781,6 +933,11 @@ fn spawn_tanks(rng: &mut SmallRng, world: &World) -> Vec<Tank> {
                 waypoint: pick_waypoint(world, team, rng),
                 track_distance: rng.random_range(0.0..40.0),
                 tread_phase: rng.random_range(0.0..3.0),
+                health: MAX_HEALTH,
+                max_health: MAX_HEALTH,
+                health_flash: 0.0,
+                invincible_timer: 0.0,
+                rapid_timer: 0.0,
             });
         }
     }
@@ -897,7 +1054,10 @@ fn update_player_tank(
     }
 
     if movement.abs() > 0.01 {
-        let velocity = vec2_scale(vec2_from_angle(tank.body_angle), tank.speed * movement);
+        let velocity = vec2_scale(
+            vec2_from_angle(tank.body_angle),
+            tank.speed * movement * tank_speed_multiplier(tank),
+        );
         let new_pos = vec2_add(tank.pos, vec2_scale(velocity, dt));
         if position_clear(world, tank.team, new_pos, TANK_RADIUS) {
             let distance = vec2_distance(tank.pos, new_pos);
@@ -937,9 +1097,9 @@ fn update_player_tank(
             pos,
             vel,
             team: tank.team,
-            life: 2.2,
+            life: BULLET_LIFE * tank_range_multiplier(tank),
         });
-        tank.fire_cooldown = FIRE_COOLDOWN;
+        tank.fire_cooldown = FIRE_COOLDOWN / tank_fire_rate_multiplier(tank);
     }
 }
 
@@ -1046,4 +1206,97 @@ fn is_start_pressed(rl: &RaylibHandle) -> bool {
 
 fn sprite_rotation(angle: f32) -> f32 {
     rad_to_deg(angle) + SPRITE_ROT_OFFSET_DEG
+}
+
+fn draw_tank_health(d: &mut RaylibDrawHandle, tank: &Tank) {
+    if tank.health >= tank.max_health || tank.health_flash <= 0.0 {
+        return;
+    }
+    let pct = (tank.health / tank.max_health).clamp(0.0, 1.0);
+    let bar_w = 44.0;
+    let bar_h = 6.0;
+    let x = tank.pos.x - bar_w * 0.5;
+    let y = tank.pos.y - TANK_RADIUS - 16.0;
+    d.draw_rectangle(x as i32, y as i32, bar_w as i32, bar_h as i32, Color::new(10, 10, 10, 190));
+    d.draw_rectangle(
+        (x + 1.0) as i32,
+        (y + 1.0) as i32,
+        ((bar_w - 2.0) * pct) as i32,
+        (bar_h - 2.0) as i32,
+        tank.team.color(),
+    );
+}
+
+fn draw_powerup_markers(d: &mut RaylibDrawHandle, tank: &Tank) {
+    let mut ring = 0.0;
+    if tank.invincible_timer > 0.0 {
+        ring += 1.0;
+        let pulse = (tank.invincible_timer * 4.0).sin().abs();
+        d.draw_circle_lines(
+            tank.pos.x as i32,
+            tank.pos.y as i32,
+            TANK_RADIUS + 8.0 + pulse * 4.0,
+            Color::new(120, 210, 255, 220),
+        );
+    }
+    if tank.rapid_timer > 0.0 {
+        ring += 1.0;
+        let pulse = (tank.rapid_timer * 5.0).sin().abs();
+        d.draw_circle_lines(
+            tank.pos.x as i32,
+            tank.pos.y as i32,
+            TANK_RADIUS + 4.0 + ring * 6.0 + pulse * 3.0,
+            Color::new(255, 200, 90, 220),
+        );
+    }
+}
+
+fn draw_powerup(d: &mut RaylibDrawHandle, assets: &Assets, powerup: &Powerup) {
+    let frames = match powerup.kind {
+        PowerupKind::Invincible => &assets.smoke.white,
+        PowerupKind::RapidRange => &assets.smoke.orange,
+        PowerupKind::Heal => &assets.smoke.yellow,
+    };
+    let idx = ((powerup.age * 8.0) as usize) % frames.len();
+    let pulse = (powerup.age * 6.0).sin().abs();
+    let tint = match powerup.kind {
+        PowerupKind::Invincible => Color::new(120, 210, 255, 235),
+        PowerupKind::RapidRange => Color::new(255, 200, 90, 235),
+        PowerupKind::Heal => Color::new(120, 230, 160, 235),
+    };
+    draw_texture_centered(d, &frames[idx], powerup.pos, 0.0, tint);
+    d.draw_circle_lines(
+        powerup.pos.x as i32,
+        powerup.pos.y as i32,
+        26.0 + pulse * 6.0,
+        match powerup.kind {
+            PowerupKind::Invincible => Color::new(120, 210, 255, 220),
+            PowerupKind::RapidRange => Color::new(255, 200, 90, 220),
+            PowerupKind::Heal => Color::new(120, 230, 160, 220),
+        },
+    );
+}
+
+fn tank_speed_multiplier(tank: &Tank) -> f32 {
+    if tank.invincible_timer > 0.0 {
+        1.15
+    } else {
+        1.0
+    }
+}
+
+fn tank_fire_rate_multiplier(tank: &Tank) -> f32 {
+    if tank.rapid_timer > 0.0 {
+        1.2
+    } else {
+        1.0
+    }
+}
+
+fn tank_range_multiplier(tank: &Tank) -> f32 {
+    if tank.rapid_timer > 0.0 {
+        2.0
+    } else {
+        1.0
+    }
 }

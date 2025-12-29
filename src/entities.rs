@@ -57,6 +57,11 @@ pub struct Tank {
     pub waypoint: Vector2,
     pub track_distance: f32,
     pub tread_phase: f32,
+    pub health: f32,
+    pub max_health: f32,
+    pub health_flash: f32,
+    pub invincible_timer: f32,
+    pub rapid_timer: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -78,5 +83,19 @@ pub struct TrackMark {
 pub struct Explosion {
     pub pos: Vector2,
     pub color: SmokeColor,
+    pub age: f32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum PowerupKind {
+    Invincible,
+    RapidRange,
+    Heal,
+}
+
+#[derive(Clone, Debug)]
+pub struct Powerup {
+    pub kind: PowerupKind,
+    pub pos: Vector2,
     pub age: f32,
 }
