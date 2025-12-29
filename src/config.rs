@@ -1,0 +1,16 @@
+pub const WINDOW_WIDTH: i32 = 1280;
+pub const WINDOW_HEIGHT: i32 = 720;
+pub const TILE_SIZE: f32 = 128.0;
+pub const MAP_WIDTH: i32 = 50;
+pub const MAP_HEIGHT: i32 = 30;
+pub const ROUND_TIME: f32 = 120.0;
+pub const TANKS_PER_TEAM: usize = 4;
+pub const TANK_RADIUS: f32 = 28.0;
+pub const BULLET_RADIUS: f32 = 6.0;
+pub const BULLET_SPEED: f32 = 520.0;
+pub const TANK_SPEED: f32 = 130.0;
+pub const BODY_ROT_SPEED: f32 = 2.6;
+pub const TURRET_ROT_SPEED: f32 = 3.4;
+pub const FIRE_COOLDOWN: f32 = 1.1;
+pub const RESPAWN_TIME: f32 = 3.0;
+pub const TRACK_LIFE: f32 = 8.0;
