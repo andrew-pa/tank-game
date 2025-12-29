@@ -3,6 +3,7 @@ use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle};
 use crate::config::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::entities::{Tank, Team};
 
+use super::helpers::draw_text_centered_screen;
 use super::Game;
 
 impl Game {
@@ -49,20 +50,18 @@ impl Game {
             None => "Stalemate!".to_string(),
         };
         let size = 46;
-        let width = d.measure_text(&message, size);
-        d.draw_text(
+        draw_text_centered_screen(
+            d,
             &message,
-            (WINDOW_WIDTH - width) / 2,
             WINDOW_HEIGHT / 2 - 40,
             size,
             Color::new(240, 240, 240, 255),
         );
         let prompt = "Press ENTER to redeploy";
         let prompt_size = 24;
-        let prompt_width = d.measure_text(prompt, prompt_size);
-        d.draw_text(
+        draw_text_centered_screen(
+            d,
             prompt,
-            (WINDOW_WIDTH - prompt_width) / 2,
             WINDOW_HEIGHT / 2 + 20,
             prompt_size,
             Color::new(220, 200, 120, 255),
@@ -74,10 +73,9 @@ impl Game {
         d.draw_rectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, Color::new(8, 8, 12, 150));
         let text = format!("Eliminated! Respawning in {remaining}");
         let size = 38;
-        let width = d.measure_text(&text, size);
-        d.draw_text(
+        draw_text_centered_screen(
+            d,
             &text,
-            (WINDOW_WIDTH - width) / 2,
             WINDOW_HEIGHT / 2 - 20,
             size,
             Color::new(240, 210, 120, 240),
@@ -109,20 +107,18 @@ impl Game {
         let count = self.countdown_timer.ceil().max(1.0) as i32;
         let text = format!("Deploying in {count}");
         let size = 44;
-        let width = d.measure_text(&text, size);
-        d.draw_text(
+        draw_text_centered_screen(
+            d,
             &text,
-            (WINDOW_WIDTH - width) / 2,
             WINDOW_HEIGHT / 2 - 80,
             size,
             Color::new(255, 230, 120, 240),
         );
         let hint = "WASD to move • Mouse to aim • LMB to fire";
         let hint_size = 18;
-        let hint_width = d.measure_text(hint, hint_size);
-        d.draw_text(
+        draw_text_centered_screen(
+            d,
             hint,
-            (WINDOW_WIDTH - hint_width) / 2,
             WINDOW_HEIGHT / 2 - 32,
             hint_size,
             Color::new(230, 230, 230, 220),

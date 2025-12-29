@@ -4,7 +4,7 @@ use crate::assets::Assets;
 use crate::config::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::math::vec2;
 
-use super::helpers::{draw_tank_preview, draw_texture_centered};
+use super::helpers::{draw_tank_preview, draw_text_centered_screen, draw_texture_centered};
 use super::Game;
 
 impl Game {
@@ -12,36 +12,15 @@ impl Game {
         d.clear_background(Color::new(30, 85, 140, 255));
         let title = "TANKS: DOMINION";
         let title_size = 56;
-        let title_width = d.measure_text(title, title_size);
-        d.draw_text(
-            title,
-            (WINDOW_WIDTH - title_width) / 2,
-            40,
-            title_size,
-            Color::new(245, 245, 245, 255),
-        );
+        draw_text_centered_screen(d, title, 40, title_size, Color::new(245, 245, 245, 255));
 
         let subtitle = "Two squads. Procedural frontier. Score the most eliminations.";
         let sub_size = 20;
-        let sub_width = d.measure_text(subtitle, sub_size);
-        d.draw_text(
-            subtitle,
-            (WINDOW_WIDTH - sub_width) / 2,
-            110,
-            sub_size,
-            Color::new(220, 220, 220, 255),
-        );
+        draw_text_centered_screen(d, subtitle, 110, sub_size, Color::new(220, 220, 220, 255));
 
         let info = "Press ENTER to deploy";
         let info_size = 28;
-        let info_width = d.measure_text(info, info_size);
-        d.draw_text(
-            info,
-            (WINDOW_WIDTH - info_width) / 2,
-            150,
-            info_size,
-            Color::new(240, 200, 110, 255),
-        );
+        draw_text_centered_screen(d, info, 150, info_size, Color::new(240, 200, 110, 255));
 
         let mut x = 120.0;
         let y = 240.0;

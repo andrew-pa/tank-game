@@ -1,7 +1,7 @@
 use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle, Rectangle, Texture2D, Vector2};
 
 use crate::assets::{Assets, TankPalette};
-use crate::config::TANK_RADIUS;
+use crate::config::{TANK_RADIUS, WINDOW_WIDTH};
 use crate::entities::{Explosion, Powerup, PowerupKind, SmokeColor, Tank};
 use crate::math::{rad_to_deg, vec2};
 
@@ -189,4 +189,15 @@ fn rapid_color(alpha: u8) -> Color {
 
 fn heal_color(alpha: u8) -> Color {
     Color::new(120, 230, 160, alpha)
+}
+
+pub(super) fn draw_text_centered_screen(
+    d: &mut RaylibDrawHandle,
+    text: &str,
+    y: i32,
+    size: i32,
+    color: Color,
+) {
+    let width = d.measure_text(text, size);
+    d.draw_text(text, (WINDOW_WIDTH - width) / 2, y, size, color);
 }
