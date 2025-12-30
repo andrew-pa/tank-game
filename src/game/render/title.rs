@@ -18,7 +18,11 @@ impl Game {
         let sub_size = 20;
         draw_text_centered_screen(d, subtitle, 110, sub_size, Color::new(220, 220, 220, 255));
 
-        let info = "Press ENTER to deploy";
+        let info = if self.input_state.gamepad_available() {
+            "Press ENTER or START/A to deploy"
+        } else {
+            "Press ENTER to deploy"
+        };
         let info_size = 28;
         draw_text_centered_screen(d, info, 150, info_size, Color::new(240, 200, 110, 255));
 

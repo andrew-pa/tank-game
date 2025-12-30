@@ -1,6 +1,7 @@
 use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle};
 
 use crate::config::{WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::game::input::InputDevice;
 use crate::entities::{Tank, Team};
 
 use super::helpers::draw_text_centered_screen;
@@ -57,7 +58,11 @@ impl Game {
             size,
             Color::new(240, 240, 240, 255),
         );
-        let prompt = "Press ENTER to redeploy";
+        let prompt = if self.input_state.gamepad_available() {
+            "Press ENTER or START/A to redeploy"
+        } else {
+            "Press ENTER to redeploy"
+        };
         let prompt_size = 24;
         draw_text_centered_screen(
             d,
@@ -114,7 +119,15 @@ impl Game {
             size,
             Color::new(255, 230, 120, 240),
         );
-        let hint = "WASD to move • Mouse to aim • LMB to fire";
+        let hint = if self.input_state.gamepad_available()
+            && self.input_state.last_device() == InputDevice::Gamepad
+        {
+            "Left Stick to move • Right Stick to aim • RT to fire"
+        } else if self.input_state.gamepad_available() {
+            "WASD/Arrows or Left Stick to move • Mouse or Right Stick to aim • LMB/Space or RT to fire"
+        } else {
+            "WASD/Arrows to move • Mouse to aim • LMB/Space to fire"
+        };
         let hint_size = 18;
         draw_text_centered_screen(
             d,

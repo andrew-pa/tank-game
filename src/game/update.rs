@@ -12,7 +12,7 @@ impl Game {
     pub fn update(&mut self, dt: f32, rl: &RaylibHandle) {
         match self.state {
             ScreenState::Title => {
-                if is_start_pressed(rl) {
+                if self.input_state.start_pressed(rl) {
                     self.reset_round();
                     self.state = ScreenState::Playing;
                 }
@@ -41,7 +41,7 @@ impl Game {
                 self.update_explosions(dt);
             }
             ScreenState::RoundOver => {
-                if is_start_pressed(rl) {
+                if self.input_state.start_pressed(rl) {
                     self.reset_round();
                     self.state = ScreenState::Playing;
                 }
@@ -136,11 +136,6 @@ impl Game {
             explosion.age < 0.48
         });
     }
-}
-
-fn is_start_pressed(rl: &RaylibHandle) -> bool {
-    rl.is_key_pressed(raylib::prelude::KeyboardKey::KEY_ENTER)
-        || rl.is_key_pressed(raylib::prelude::KeyboardKey::KEY_SPACE)
 }
 
 fn spawn_explosion(explosions: &mut Vec<Explosion>, pos: raylib::prelude::Vector2, color: SmokeColor) {
