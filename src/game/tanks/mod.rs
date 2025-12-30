@@ -25,6 +25,7 @@ impl Game {
         let world = &self.world;
         let camera = self.camera();
         let mouse_world = rl.get_screen_to_world2D(rl.get_mouse_position(), camera);
+        let player_input = self.input_state.player_input(rl);
 
         for (index, tank) in self.tanks.iter_mut().enumerate() {
             movement::update_tank_timers(tank, dt);
@@ -43,9 +44,9 @@ impl Game {
                 player::update_player_tank(
                     tank,
                     dt,
-                    rl,
                     world,
                     mouse_world,
+                    &player_input,
                     &mut new_tracks,
                     &mut new_bullets,
                 );

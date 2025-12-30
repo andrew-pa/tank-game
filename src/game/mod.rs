@@ -1,4 +1,5 @@
 mod constants;
+mod input;
 mod powerups;
 mod render;
 mod tanks;
@@ -14,6 +15,7 @@ use crate::config::{
 use crate::entities::{Bullet, Explosion, Powerup, Tank, Team, TrackMark};
 use crate::math::{vec2, vec2_add, vec2_scale};
 use crate::world::World;
+use input::InputState;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ScreenState {
@@ -38,6 +40,7 @@ pub struct Game {
     team_kills: [u32; 2],
     last_winner: Option<Team>,
     player_index: usize,
+    input_state: InputState,
 }
 
 impl Game {
@@ -61,6 +64,7 @@ impl Game {
             team_kills: [0, 0],
             last_winner: None,
             player_index: 0,
+            input_state: InputState::new(),
         };
         game.reset_round();
         game.state = ScreenState::Title;
