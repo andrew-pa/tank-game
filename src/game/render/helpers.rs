@@ -21,11 +21,7 @@ pub(super) fn explosion_frame<'a>(assets: &'a Assets, explosion: &Explosion) -> 
     }
 }
 
-pub(super) fn draw_tank_preview<D: RaylibDraw>(
-    d: &mut D,
-    palette: &TankPalette,
-    pos: Vector2,
-) {
+pub(super) fn draw_tank_preview<D: RaylibDraw>(d: &mut D, palette: &TankPalette, pos: Vector2) {
     draw_texture_centered(
         d,
         &palette.outline_body,
@@ -69,7 +65,10 @@ pub(super) fn draw_texture_centered<D: RaylibDraw>(
         texture,
         src,
         dest,
-        Vector2 { x: w / 2.0, y: h / 2.0 },
+        Vector2 {
+            x: w / 2.0,
+            y: h / 2.0,
+        },
         rotation,
         tint,
     );
@@ -97,14 +96,7 @@ pub(super) fn draw_barrel<D: RaylibDraw>(
         width: w,
         height: h,
     };
-    d.draw_texture_pro(
-        texture,
-        src,
-        dest,
-        origin,
-        sprite_rotation(angle),
-        tint,
-    );
+    d.draw_texture_pro(texture, src, dest, origin, sprite_rotation(angle), tint);
 }
 
 pub(super) fn sprite_rotation(angle: f32) -> f32 {

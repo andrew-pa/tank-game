@@ -51,9 +51,7 @@ impl InputState {
     pub fn start_pressed(&mut self, rl: &RaylibHandle) -> bool {
         self.refresh_gamepad(rl);
         let mut pressed = false;
-        if rl.is_key_pressed(KeyboardKey::KEY_ENTER)
-            || rl.is_key_pressed(KeyboardKey::KEY_SPACE)
-        {
+        if rl.is_key_pressed(KeyboardKey::KEY_ENTER) || rl.is_key_pressed(KeyboardKey::KEY_SPACE) {
             self.last_device = InputDevice::KeyboardMouse;
             pressed = true;
         }
@@ -175,30 +173,36 @@ fn sample_gamepad(rl: &RaylibHandle, gamepad: i32) -> GamepadSample {
     let left = apply_radial_deadzone(left_raw, STICK_DEADZONE);
     let right = apply_radial_deadzone(right_raw, AIM_DEADZONE);
 
-    let dpad_turn = if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_LEFT) {
+    let dpad_turn = if rl
+        .is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_LEFT)
+    {
         -1.0
     } else if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_RIGHT) {
         1.0
     } else {
         0.0
     };
-    let dpad_move = if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_UP) {
-        1.0
-    } else if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_DOWN) {
-        -1.0
-    } else {
-        0.0
-    };
+    let dpad_move =
+        if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_UP) {
+            1.0
+        } else if rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_LEFT_FACE_DOWN) {
+            -1.0
+        } else {
+            0.0
+        };
 
     let turn = (left.x + dpad_turn).clamp(-1.0, 1.0);
     let movement = (-left.y + dpad_move).clamp(-1.0, 1.0);
 
-    let aim_dir = if vec2_length(right) > 0.01 { Some(right) } else { None };
+    let aim_dir = if vec2_length(right) > 0.01 {
+        Some(right)
+    } else {
+        None
+    };
 
-    let right_trigger = normalize_trigger(rl.get_gamepad_axis_movement(
-        gamepad,
-        GamepadAxis::GAMEPAD_AXIS_RIGHT_TRIGGER,
-    ));
+    let right_trigger = normalize_trigger(
+        rl.get_gamepad_axis_movement(gamepad, GamepadAxis::GAMEPAD_AXIS_RIGHT_TRIGGER),
+    );
     let wants_fire = right_trigger > TRIGGER_THRESHOLD
         || rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_RIGHT_TRIGGER_1)
         || rl.is_gamepad_button_down(gamepad, GamepadButton::GAMEPAD_BUTTON_RIGHT_TRIGGER_2)

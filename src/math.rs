@@ -1,4 +1,4 @@
-use rand::{rngs::SmallRng, Rng};
+use rand::{Rng, rngs::SmallRng};
 use raylib::prelude::{Color, Rectangle, Vector2};
 use std::f32::consts::PI;
 

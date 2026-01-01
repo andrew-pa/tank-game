@@ -181,14 +181,13 @@ pub fn load_tank_palette(rl: &mut RaylibHandle, thread: &RaylibThread, color: &s
             .load_texture(thread, &format!("assets/PNG/Tanks/barrel{color}.png"))
             .expect("tank barrel"),
         outline_body: rl
-            .load_texture(thread, &format!(
-                "assets/PNG/Tanks/tank{color}_outline.png"
-            ))
+            .load_texture(thread, &format!("assets/PNG/Tanks/tank{color}_outline.png"))
             .expect("tank outline"),
         outline_barrel: rl
-            .load_texture(thread, &format!(
-                "assets/PNG/Tanks/barrel{color}_outline.png"
-            ))
+            .load_texture(
+                thread,
+                &format!("assets/PNG/Tanks/barrel{color}_outline.png"),
+            )
             .expect("barrel outline"),
     }
 }
@@ -203,31 +202,35 @@ pub fn load_bullet_palette(
             .load_texture(thread, &format!("assets/PNG/Bullets/bullet{color}.png"))
             .expect("bullet"),
         silver: rl
-            .load_texture(thread, &format!(
-                "assets/PNG/Bullets/bullet{color}Silver.png"
-            ))
+            .load_texture(
+                thread,
+                &format!("assets/PNG/Bullets/bullet{color}Silver.png"),
+            )
             .expect("bullet silver"),
         outline: rl
-            .load_texture(thread, &format!(
-                "assets/PNG/Bullets/bullet{color}_outline.png"
-            ))
+            .load_texture(
+                thread,
+                &format!("assets/PNG/Bullets/bullet{color}_outline.png"),
+            )
             .expect("bullet outline"),
         silver_outline: rl
-            .load_texture(thread, &format!(
-                "assets/PNG/Bullets/bullet{color}Silver_outline.png"
-            ))
+            .load_texture(
+                thread,
+                &format!("assets/PNG/Bullets/bullet{color}Silver_outline.png"),
+            )
             .expect("bullet silver outline"),
     }
 }
 
-pub fn load_smoke_frames(rl: &mut RaylibHandle, thread: &RaylibThread, color: &str) -> Vec<Texture2D> {
+pub fn load_smoke_frames(
+    rl: &mut RaylibHandle,
+    thread: &RaylibThread,
+    color: &str,
+) -> Vec<Texture2D> {
     (0..6)
         .map(|idx| {
-            rl.load_texture(
-                thread,
-                &format!("assets/PNG/Smoke/smoke{color}{idx}.png"),
-            )
-            .expect("smoke")
+            rl.load_texture(thread, &format!("assets/PNG/Smoke/smoke{color}{idx}.png"))
+                .expect("smoke")
         })
         .collect()
 }

@@ -1,18 +1,13 @@
 use raylib::prelude::{Color, RaylibDraw};
 
-use crate::game::input::InputDevice;
 use crate::entities::{Tank, Team};
+use crate::game::input::InputDevice;
 
-use super::helpers::{draw_text_centered_screen, measure_text_width};
 use super::Game;
+use super::helpers::{draw_text_centered_screen, measure_text_width};
 
 impl Game {
-    pub(super) fn draw_hud<D: RaylibDraw>(
-        &self,
-        d: &mut D,
-        screen_width: i32,
-        screen_height: i32,
-    ) {
+    pub(super) fn draw_hud<D: RaylibDraw>(&self, d: &mut D, screen_width: i32, screen_height: i32) {
         let bar_height = 48;
         d.draw_rectangle(0, 0, screen_width, bar_height, Color::new(20, 24, 28, 220));
         let red_label = format!("{}: {}", Team::Red.name(), self.team_kills[0]);
@@ -54,7 +49,13 @@ impl Game {
         screen_width: i32,
         screen_height: i32,
     ) {
-        d.draw_rectangle(0, 0, screen_width, screen_height, Color::new(10, 10, 10, 160));
+        d.draw_rectangle(
+            0,
+            0,
+            screen_width,
+            screen_height,
+            Color::new(10, 10, 10, 160),
+        );
         let message = match self.last_winner {
             Some(team) => format!("{} wins the round!", team.name()),
             None => "Stalemate!".to_string(),
@@ -126,12 +127,7 @@ impl Game {
         d.draw_text("Hull", x, y - 18, 16, Color::new(230, 230, 230, 220));
     }
 
-    fn draw_countdown<D: RaylibDraw>(
-        &self,
-        d: &mut D,
-        screen_width: i32,
-        screen_height: i32,
-    ) {
+    fn draw_countdown<D: RaylibDraw>(&self, d: &mut D, screen_width: i32, screen_height: i32) {
         let count = self.countdown_timer.ceil().max(1.0) as i32;
         let text = format!("Deploying in {count}");
         let size = 44;

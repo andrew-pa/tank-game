@@ -24,7 +24,11 @@ impl Game {
                     1 => PowerupKind::RapidRange,
                     _ => PowerupKind::Heal,
                 };
-                self.powerups.push(Powerup { kind, pos, age: 0.0 });
+                self.powerups.push(Powerup {
+                    kind,
+                    pos,
+                    age: 0.0,
+                });
             }
             self.powerup_spawn_timer = self.next_powerup_spawn_delay();
         } else if self.powerup_spawn_timer <= 0.0 {

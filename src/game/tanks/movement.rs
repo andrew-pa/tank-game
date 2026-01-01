@@ -55,7 +55,10 @@ fn track_mark_for_tank(tank: &Tank) -> TrackMark {
     TrackMark {
         pos: vec2_add(
             tank.pos,
-            vec2_scale(vec2_from_angle(tank.body_angle + std::f32::consts::PI), TRACK_OFFSET),
+            vec2_scale(
+                vec2_from_angle(tank.body_angle + std::f32::consts::PI),
+                TRACK_OFFSET,
+            ),
         ),
         rotation: tank.body_angle,
         age: 0.0,

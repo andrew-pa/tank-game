@@ -5,7 +5,7 @@ mod render;
 mod tanks;
 mod update;
 
-use rand::{rngs::SmallRng, SeedableRng};
+use rand::{SeedableRng, rngs::SmallRng};
 use raylib::prelude::Camera2D;
 
 use crate::config::{

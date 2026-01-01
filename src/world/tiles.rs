@@ -1,4 +1,4 @@
-use rand::{rngs::SmallRng, Rng};
+use rand::{Rng, rngs::SmallRng};
 
 use crate::config::TILE_SIZE;
 use crate::entities::Team;

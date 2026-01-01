@@ -2,7 +2,7 @@ mod generation;
 mod obstacles;
 mod tiles;
 
-use rand::{rngs::SmallRng, Rng};
+use rand::{Rng, rngs::SmallRng};
 use raylib::prelude::{Rectangle, Vector2};
 
 use crate::config::TILE_SIZE;

@@ -1,7 +1,7 @@
-use rand::{rngs::SmallRng, Rng};
+use rand::{Rng, rngs::SmallRng};
 use raylib::prelude::Vector2;
 
-use crate::config::{FIRE_COOLDOWN, MAX_HEALTH, TANKS_PER_TEAM, TANK_SPEED, TILE_SIZE};
+use crate::config::{FIRE_COOLDOWN, MAX_HEALTH, TANK_SPEED, TANKS_PER_TEAM, TILE_SIZE};
 use crate::entities::{Tank, Team};
 use crate::math::{random_angle, vec2};
 use crate::world::World;

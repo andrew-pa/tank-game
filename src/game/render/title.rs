@@ -3,8 +3,8 @@ use raylib::prelude::{Color, RaylibDraw};
 use crate::assets::Assets;
 use crate::math::vec2;
 
-use super::helpers::{draw_tank_preview, draw_text_centered_screen, draw_texture_centered};
 use super::Game;
+use super::helpers::{draw_tank_preview, draw_text_centered_screen, draw_texture_centered};
 
 impl Game {
     pub(super) fn draw_title<D: RaylibDraw>(

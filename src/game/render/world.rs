@@ -1,14 +1,14 @@
 use raylib::prelude::{Color, RaylibDraw, RaylibMode2DExt};
 
-use crate::assets::{bullet_palette, obstacle_texture, tank_palette, Assets};
+use crate::assets::{Assets, bullet_palette, obstacle_texture, tank_palette};
 use crate::config::{TANK_RADIUS, TILE_SIZE, TRACK_LIFE};
 use crate::math::{vec2, vec2_angle, with_alpha};
 
+use super::Game;
 use super::helpers::{
     draw_barrel, draw_powerup, draw_powerup_markers, draw_tank_health, draw_texture_centered,
     explosion_frame, measure_text_width, sprite_rotation,
 };
-use super::Game;
 
 impl Game {
     pub(super) fn draw_world<D: RaylibDraw>(
@@ -126,11 +126,7 @@ impl Game {
             }
 
             if self.intro_timer > 0.0 {
-                if let Some(player) = self
-                    .tanks
-                    .get(self.player_index)
-                    .filter(|tank| tank.alive)
-                {
+                if let Some(player) = self.tanks.get(self.player_index).filter(|tank| tank.alive) {
                     let pulse = (self.intro_timer * 6.0).sin().abs();
                     let radius = TANK_RADIUS + 10.0 + pulse * 6.0;
                     d2.draw_circle_lines(

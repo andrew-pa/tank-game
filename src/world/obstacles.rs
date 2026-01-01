@@ -1,4 +1,4 @@
-use rand::{rngs::SmallRng, Rng};
+use rand::{Rng, rngs::SmallRng};
 use raylib::prelude::Vector2;
 
 use crate::math::{vec2, vec2_distance};

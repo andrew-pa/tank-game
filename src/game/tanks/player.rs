@@ -5,8 +5,8 @@ use crate::entities::{Bullet, Tank, TrackMark};
 use crate::math::{vec2_angle, vec2_length, vec2_sub};
 use crate::world::World;
 
-use super::combat::fire_bullet;
 use super::super::input::PlayerInput;
+use super::combat::fire_bullet;
 use super::modifiers::speed_multiplier;
 use super::movement::{advance_tank, wrap_angle};
 

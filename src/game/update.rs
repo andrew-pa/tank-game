@@ -138,8 +138,16 @@ impl Game {
     }
 }
 
-fn spawn_explosion(explosions: &mut Vec<Explosion>, pos: raylib::prelude::Vector2, color: SmokeColor) {
-    explosions.push(Explosion { pos, color, age: 0.0 });
+fn spawn_explosion(
+    explosions: &mut Vec<Explosion>,
+    pos: raylib::prelude::Vector2,
+    color: SmokeColor,
+) {
+    explosions.push(Explosion {
+        pos,
+        color,
+        age: 0.0,
+    });
 }
 
 fn spawn_explosion_pair(

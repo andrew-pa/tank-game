@@ -4,13 +4,13 @@ use raylib::prelude::Vector2;
 use crate::config::{BODY_ROT_SPEED, TURRET_ROT_SPEED};
 use crate::entities::{Bullet, Tank, Team, TrackMark};
 use crate::math::{
-    angle_difference, vec2, vec2_add, vec2_angle, vec2_distance, vec2_length,
-    vec2_normalize, vec2_scale, vec2_sub, rotate_towards,
+    angle_difference, rotate_towards, vec2, vec2_add, vec2_angle, vec2_distance, vec2_length,
+    vec2_normalize, vec2_scale, vec2_sub,
 };
 use crate::world::World;
 
-use super::combat::fire_bullet;
 use super::super::constants::{AI_FIRE_RANGE, AI_TARGET_FAR, AI_TARGET_NEAR};
+use super::combat::fire_bullet;
 use super::modifiers::{range_multiplier, speed_multiplier};
 use super::movement::advance_tank;
 use super::spawn::pick_waypoint;
@@ -100,7 +100,11 @@ fn avoidance_vector(world: &World, team: Team, pos: Vector2) -> Vector2 {
     }
 
     if world.is_inside_enemy_zone(team, pos) {
-        if let Some(zone) = world.spawn_zones.iter().find(|zone| zone.team == team.enemy()) {
+        if let Some(zone) = world
+            .spawn_zones
+            .iter()
+            .find(|zone| zone.team == team.enemy())
+        {
             let zone_center = vec2(
                 zone.rect.x + zone.rect.width * 0.5,
                 zone.rect.y + zone.rect.height * 0.5,
