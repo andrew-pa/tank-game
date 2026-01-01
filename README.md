@@ -1,11 +1,12 @@
+This game was 99% vibe-coded using ChatGPT 5.2 Codex.
+
+---
+
 # Tanks: Dominion
 
 Tanks: Dominion is a top‑down, squad‑based tank skirmish. Two teams (Crimson vs. Azure) battle across a procedurally generated frontier, racing to score the most eliminations before the round timer expires.
 
-<video controls loop muted playsinline width="720">
-  <source src="demo.webm" type="video/webm" />
-  Your browser does not support the video tag.
-</video>
+![Gameplay demo](demo_frame.png)
 
 [Watch the gameplay demo](demo.webm)
 
