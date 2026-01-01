@@ -1,7 +1,10 @@
-use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle, Rectangle, Texture2D, Vector2};
+use std::ffi::CString;
+
+use raylib::ffi;
+use raylib::prelude::{Color, RaylibDraw, Rectangle, Texture2D, Vector2};
 
 use crate::assets::{Assets, TankPalette};
-use crate::config::{TANK_RADIUS, WINDOW_WIDTH};
+use crate::config::TANK_RADIUS;
 use crate::entities::{Explosion, Powerup, PowerupKind, SmokeColor, Tank};
 use crate::math::{rad_to_deg, vec2};
 
@@ -18,7 +21,11 @@ pub(super) fn explosion_frame<'a>(assets: &'a Assets, explosion: &Explosion) -> 
     }
 }
 
-pub(super) fn draw_tank_preview(d: &mut RaylibDrawHandle, palette: &TankPalette, pos: Vector2) {
+pub(super) fn draw_tank_preview<D: RaylibDraw>(
+    d: &mut D,
+    palette: &TankPalette,
+    pos: Vector2,
+) {
     draw_texture_centered(
         d,
         &palette.outline_body,
@@ -37,8 +44,8 @@ pub(super) fn draw_tank_preview(d: &mut RaylibDrawHandle, palette: &TankPalette,
     draw_barrel(d, &palette.barrel, pos, 0.3, Color::WHITE);
 }
 
-pub(super) fn draw_texture_centered(
-    d: &mut RaylibDrawHandle,
+pub(super) fn draw_texture_centered<D: RaylibDraw>(
+    d: &mut D,
     texture: &Texture2D,
     pos: Vector2,
     rotation: f32,
@@ -68,8 +75,8 @@ pub(super) fn draw_texture_centered(
     );
 }
 
-pub(super) fn draw_barrel(
-    d: &mut RaylibDrawHandle,
+pub(super) fn draw_barrel<D: RaylibDraw>(
+    d: &mut D,
     texture: &Texture2D,
     pos: Vector2,
     angle: f32,
@@ -104,7 +111,12 @@ pub(super) fn sprite_rotation(angle: f32) -> f32 {
     rad_to_deg(angle) + SPRITE_ROT_OFFSET_DEG
 }
 
-pub(super) fn draw_tank_health(d: &mut RaylibDrawHandle, tank: &Tank) {
+pub(super) fn measure_text_width(text: &str, size: i32) -> i32 {
+    let c_text = CString::new(text).unwrap_or_default();
+    unsafe { ffi::MeasureText(c_text.as_ptr(), size) }
+}
+
+pub(super) fn draw_tank_health<D: RaylibDraw>(d: &mut D, tank: &Tank) {
     if tank.health >= tank.max_health || tank.health_flash <= 0.0 {
         return;
     }
@@ -129,7 +141,7 @@ pub(super) fn draw_tank_health(d: &mut RaylibDrawHandle, tank: &Tank) {
     );
 }
 
-pub(super) fn draw_powerup_markers(d: &mut RaylibDrawHandle, tank: &Tank) {
+pub(super) fn draw_powerup_markers<D: RaylibDraw>(d: &mut D, tank: &Tank) {
     let mut ring = 0.0;
     if tank.invincible_timer > 0.0 {
         ring += 1.0;
@@ -153,7 +165,7 @@ pub(super) fn draw_powerup_markers(d: &mut RaylibDrawHandle, tank: &Tank) {
     }
 }
 
-pub(super) fn draw_powerup(d: &mut RaylibDrawHandle, assets: &Assets, powerup: &Powerup) {
+pub(super) fn draw_powerup<D: RaylibDraw>(d: &mut D, assets: &Assets, powerup: &Powerup) {
     let frames = match powerup.kind {
         PowerupKind::Invincible => &assets.smoke.white,
         PowerupKind::RapidRange => &assets.smoke.orange,
@@ -191,13 +203,14 @@ fn heal_color(alpha: u8) -> Color {
     Color::new(120, 230, 160, alpha)
 }
 
-pub(super) fn draw_text_centered_screen(
-    d: &mut RaylibDrawHandle,
+pub(super) fn draw_text_centered_screen<D: RaylibDraw>(
+    d: &mut D,
     text: &str,
     y: i32,
     size: i32,
     color: Color,
+    screen_width: i32,
 ) {
-    let width = d.measure_text(text, size);
-    d.draw_text(text, (WINDOW_WIDTH - width) / 2, y, size, color);
+    let width = measure_text_width(text, size);
+    d.draw_text(text, (screen_width - width) / 2, y, size, color);
 }

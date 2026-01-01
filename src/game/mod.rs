@@ -91,7 +91,9 @@ impl Game {
             .unwrap_or(0);
     }
 
-    fn camera(&self) -> Camera2D {
+    fn camera(&self, screen_width: i32, screen_height: i32) -> Camera2D {
+        let scale = (screen_width as f32 / WINDOW_WIDTH as f32)
+            .min(screen_height as f32 / WINDOW_HEIGHT as f32);
         let mut center = self
             .tanks
             .get(self.player_index)
@@ -124,9 +126,9 @@ impl Game {
                     self.world.height as f32 * TILE_SIZE * 0.5,
                 )
             }),
-            offset: vec2(WINDOW_WIDTH as f32 * 0.5, WINDOW_HEIGHT as f32 * 0.55),
+            offset: vec2(screen_width as f32 * 0.5, screen_height as f32 * 0.55),
             rotation: 0.0,
-            zoom: 0.55,
+            zoom: 0.55 * scale,
         }
     }
 }

@@ -30,9 +30,11 @@ fn main() {
 
     if debug_frame {
         game.update(1.0 / 60.0, &rl);
+        let screen_width = rl.get_screen_width();
+        let screen_height = rl.get_screen_height();
         {
             let mut d = rl.begin_drawing(&thread);
-            game.draw(&mut d, &assets);
+            game.draw(&mut d, &assets, screen_width, screen_height);
         }
         rl.take_screenshot(&thread, "debug_frame.png");
         return;
@@ -41,8 +43,10 @@ fn main() {
     while !rl.window_should_close() {
         let dt = rl.get_frame_time();
         game.update(dt, &rl);
+        let screen_width = rl.get_screen_width();
+        let screen_height = rl.get_screen_height();
         let mut d = rl.begin_drawing(&thread);
-        game.draw(&mut d, &assets);
+        game.draw(&mut d, &assets, screen_width, screen_height);
     }
 }
 

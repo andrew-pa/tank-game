@@ -1,22 +1,41 @@
-use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle};
+use raylib::prelude::{Color, RaylibDraw};
 
 use crate::assets::Assets;
-use crate::config::{WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::math::vec2;
 
 use super::helpers::{draw_tank_preview, draw_text_centered_screen, draw_texture_centered};
 use super::Game;
 
 impl Game {
-    pub(super) fn draw_title(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
+    pub(super) fn draw_title<D: RaylibDraw>(
+        &self,
+        d: &mut D,
+        assets: &Assets,
+        screen_width: i32,
+        screen_height: i32,
+    ) {
         d.clear_background(Color::new(30, 85, 140, 255));
         let title = "TANKS: DOMINION";
         let title_size = 56;
-        draw_text_centered_screen(d, title, 40, title_size, Color::new(245, 245, 245, 255));
+        draw_text_centered_screen(
+            d,
+            title,
+            40,
+            title_size,
+            Color::new(245, 245, 245, 255),
+            screen_width,
+        );
 
         let subtitle = "Two squads. Procedural frontier. Score the most eliminations.";
         let sub_size = 20;
-        draw_text_centered_screen(d, subtitle, 110, sub_size, Color::new(220, 220, 220, 255));
+        draw_text_centered_screen(
+            d,
+            subtitle,
+            110,
+            sub_size,
+            Color::new(220, 220, 220, 255),
+            screen_width,
+        );
 
         let info = if self.input_state.gamepad_available() {
             "Press ENTER or START/A to deploy"
@@ -24,7 +43,14 @@ impl Game {
             "Press ENTER to deploy"
         };
         let info_size = 28;
-        draw_text_centered_screen(d, info, 150, info_size, Color::new(240, 200, 110, 255));
+        draw_text_centered_screen(
+            d,
+            info,
+            150,
+            info_size,
+            Color::new(240, 200, 110, 255),
+            screen_width,
+        );
 
         let mut x = 120.0;
         let y = 240.0;
@@ -96,13 +122,13 @@ impl Game {
         for texture in obstacles {
             draw_texture_centered(d, texture, vec2(ox, oy), 0.0, Color::WHITE);
             ox += 90.0;
-            if ox > WINDOW_WIDTH as f32 - 90.0 {
+            if ox > screen_width as f32 - 90.0 {
                 ox = 80.0;
                 oy += 80.0;
             }
         }
 
-        let mut smoke_x = WINDOW_WIDTH as f32 - 220.0;
+        let mut smoke_x = screen_width as f32 - 220.0;
         let mut smoke_y = 250.0;
         let smoke_frames = assets
             .smoke
@@ -114,7 +140,7 @@ impl Game {
         for frame in smoke_frames {
             draw_texture_centered(d, frame, vec2(smoke_x, smoke_y), 0.0, Color::WHITE);
             smoke_y += 50.0;
-            if smoke_y > WINDOW_HEIGHT as f32 - 80.0 {
+            if smoke_y > screen_height as f32 - 80.0 {
                 smoke_y = 250.0;
                 smoke_x += 80.0;
             }

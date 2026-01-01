@@ -1,4 +1,4 @@
-use raylib::prelude::{Color, RaylibDraw, RaylibDrawHandle, RaylibMode2DExt};
+use raylib::prelude::{Color, RaylibDraw, RaylibMode2DExt};
 
 use crate::assets::{bullet_palette, obstacle_texture, tank_palette, Assets};
 use crate::config::{TANK_RADIUS, TILE_SIZE, TRACK_LIFE};
@@ -6,13 +6,19 @@ use crate::math::{vec2, vec2_angle, with_alpha};
 
 use super::helpers::{
     draw_barrel, draw_powerup, draw_powerup_markers, draw_tank_health, draw_texture_centered,
-    explosion_frame, sprite_rotation,
+    explosion_frame, measure_text_width, sprite_rotation,
 };
 use super::Game;
 
 impl Game {
-    pub(super) fn draw_world(&self, d: &mut RaylibDrawHandle, assets: &Assets) {
-        let camera = self.camera();
+    pub(super) fn draw_world<D: RaylibDraw>(
+        &self,
+        d: &mut D,
+        assets: &Assets,
+        screen_width: i32,
+        screen_height: i32,
+    ) {
+        let camera = self.camera(screen_width, screen_height);
         d.draw_mode2D(camera, |mut d2, _| {
             for y in 0..self.world.height {
                 for x in 0..self.world.width {
@@ -135,7 +141,7 @@ impl Game {
                     );
                     let label = "YOU";
                     let size = 18;
-                    let width = d2.measure_text(label, size);
+                    let width = measure_text_width(label, size);
                     d2.draw_text(
                         label,
                         (player.pos.x - width as f32 * 0.5) as i32,

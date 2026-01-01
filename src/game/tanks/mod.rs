@@ -23,7 +23,7 @@ impl Game {
         let mut new_bullets = Vec::new();
         let mut new_tracks = Vec::new();
         let world = &self.world;
-        let camera = self.camera();
+        let camera = self.camera(rl.get_screen_width(), rl.get_screen_height());
         let mouse_world = rl.get_screen_to_world2D(rl.get_mouse_position(), camera);
         let player_input = self.input_state.player_input(rl);
 
